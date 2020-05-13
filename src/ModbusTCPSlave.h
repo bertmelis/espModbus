@@ -93,10 +93,10 @@ class Connection {
 }  // end namespace espModbus
 
 class ModbusTCPSlave {
- friend class espModbus::Connection;
+  friend class espModbus::Connection;
 
  public:
-  ModbusTCPSlave(uint8_t slaveId, uint16_t port = 502);
+  explicit ModbusTCPSlave(uint8_t slaveId, uint16_t port = 502);
   ~ModbusTCPSlave();
 
   void onRequest(espModbus::OnRequestCb callback, void* arg = nullptr);
