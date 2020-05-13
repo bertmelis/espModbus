@@ -9,25 +9,21 @@
 ModbusTCPSlave modbus(1, 502);
 
 void onRequest(void* arg, espModbus::Request* request) {
-  Serial.printf("New request arrived!\n");
-  /*
-  Serial.printf("New request %d\n", request->Functioncode());
-  switch (request->Functioncode()) {
+  Serial.printf("New request %d\n", request->message->functionalCode());
+  switch (request->message->functionalCode()) {
     case espModbus::READ_HOLD_REGISTER:
-      size_t length = request->length() * 2;  // request is in registers x2, for number of bytes
+      {
+      size_t length = request->message->length() * 2;  // request is in registers x2, for number of bytes
       uint8_t* data = new uint8_t[length];  
       memset(data, 0, length);
-      request->sendResponse(espModbus::SUCCES, data, length));
+      request->respond(espModbus::SUCCES, data, length);
       return;
-    case espModbus::WRITE_HOLD_REGISTER:
-      request->sendResponse(espModbus::SUCCES));
-      return;
+      }
     default:
       Serial.printf("Request not implemented");
-      request->sendResponse(espModbus::ILLEGAL_FUNCTION);
+      request->respond(espModbus::ILLEGAL_FUNCTION);
       return;
   }
-  */
 }
 
 

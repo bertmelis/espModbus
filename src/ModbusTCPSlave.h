@@ -66,7 +66,7 @@ class Request {
  public:
   Request(Connection* c, RequestMessage* m);
   const RequestMessage* message;
-  void respond(Error error, uint8_t* data, size_t len);
+  void respond(Error error, uint8_t* data = nullptr, size_t len = 0);
 
  private:
   Connection* _conn;
