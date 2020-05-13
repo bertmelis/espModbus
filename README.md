@@ -1,2 +1,6 @@
 # espModbus
-Async modbus server for esp
+
+Async Modbus server for ESP32.
+
+This is WIP!
+

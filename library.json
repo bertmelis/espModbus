@@ -1,0 +1,28 @@
+{
+  "name": "espModbus",
+  "version": "0.0.1",
+  "keywords": "Modbus, TCP, async, Arduino, esp32",
+  "description": "Modbus slave implementation for ESP32 using AsyncTCP",
+  "homepage": "https://github.com/bertmelis/espModbus",
+  "license": "MIT",
+  "authors": {
+    "name": "Bert Melis",
+    "url": "https://github.com/bertmelis",
+    "maintainer": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bertmelis/espModbus.git",
+    "branch": "master"
+  },
+  "frameworks": "arduino",
+  "platforms": [
+    "espressif32"
+  ],
+  "dependencies": [
+    {
+      "name": "AsyncTCP",
+      "platforms": "espressif32"
+    }
+  ]
+}
