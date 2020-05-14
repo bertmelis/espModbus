@@ -80,9 +80,9 @@ void Connection::_onData(void* conn, AsyncClient* client, void* data, size_t len
 
 void Connection::_onPoll(void* conn, AsyncClient* client) {
   Connection* c = static_cast<Connection*>(conn);
-  // polling is about every 500ms so timeout in 60 min = after 120 counts
+  // polling is about every 500ms
   ++(c->_keepaliveCount);
-  if (c->_keepaliveCount > 120) {
+  if (c->_keepaliveCount > CLIENT_KEEPALIVE) {
     log_v("client %d inactive, closing", client);
     c->_client->close(false);
   }

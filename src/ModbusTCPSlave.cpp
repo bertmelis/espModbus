@@ -25,6 +25,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "ModbusTCPSlave.h"
 
+uint8_t ModbusTCPSlave::_numberClients = 0;
+
 ModbusTCPSlave::ModbusTCPSlave(uint8_t slaveId, uint16_t port) :
   _server(port),
   _slaveId(slaveId),
@@ -37,6 +39,7 @@ ModbusTCPSlave::ModbusTCPSlave(uint8_t slaveId, uint16_t port) :
 
 ModbusTCPSlave::~ModbusTCPSlave() {
   // destructor of _server will call _server.end();
+  // TODO(bertmelis): what about current clients?
 }
 
 void ModbusTCPSlave::onRequest(espModbus::OnRequestCb callback, void* arg) {
@@ -57,8 +60,6 @@ void ModbusTCPSlave::begin() {
 uint8_t ModbusTCPSlave::getId() const {
   return _slaveId;
 }
-
-uint8_t ModbusTCPSlave::_numberClients = 0;
 
 void ModbusTCPSlave::_onClientConnect(void* slave, AsyncClient* client) {
   ModbusTCPSlave* s = static_cast<ModbusTCPSlave*>(slave);
@@ -90,6 +91,5 @@ void ModbusTCPSlave::_onClientDisconnect(ModbusTCPSlave* c, espModbus::Connectio
 }
 
 void ModbusTCPSlave::_onRequest(const espModbus::Connection& connection) {
-  log_v("Callback called");
   _onRequestCb(_arg, connection);
 }

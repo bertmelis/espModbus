@@ -94,7 +94,6 @@ Message::Message(uint16_t transactionId,
     _buffer[4] = high(length);
     _buffer[5] = low(length);
     _buffer[6] = slaveId;
-    log_v("Modbus Message created");
   }
 
 RequestMessage::RequestMessage(uint16_t transactionId,

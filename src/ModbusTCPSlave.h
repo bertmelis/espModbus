@@ -25,8 +25,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
 
+// unit: times 500ms
 #ifndef CLIENT_KEEPALIVE
-#define CLIENT_KEEPALIVE 10
+#define CLIENT_KEEPALIVE 120
 #endif
 
 #ifndef MAX_MODBUS_CLIENTS
@@ -89,7 +90,6 @@ class ModbusTCPSlave {
  public:
   explicit ModbusTCPSlave(uint8_t slaveId, uint16_t port = 502);
   ~ModbusTCPSlave();
-
   void onRequest(espModbus::OnRequestCb callback, void* arg = nullptr);
   void begin();
   uint8_t getId() const;

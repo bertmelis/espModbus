@@ -45,14 +45,13 @@ class MessageParser {
   MessageParser() :
     _buffer(PARSER_BUFFER_LENGTH) {}
 
-  size_t parse(uint8_t* data, size_t len, T& message) {  //NOLINT
+  size_t parse(uint8_t* data, size_t len, T& message) {  //NOLINT (non const reference)
     // shortest message is 12 bytes, so try to copy in chuncks of 12 bytes
     size_t length = std::min(PARSER_BUFFER_LENGTH - _buffer.size(), len);
     for (size_t i = 0; i < length; ++i) {
       _buffer.push(data[i]);
     }
 
-    // start validating
     while (_buffer.size() >= 12) {
       if (_buffer[2] != 0 ||  // high byte protocol
           _buffer[3] != 0 ||  // low byte protocol
