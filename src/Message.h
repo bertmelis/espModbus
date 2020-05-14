@@ -29,11 +29,15 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <stddef.h>  // for size_t
 #include <cstring>  // for memcpy
 
+#include <esp32-hal-log.h>
+
 #include "TypeDefs.h"
 
 namespace espModbus {
 
-class MessageFactory;
+class Message;
+class RequestMessage;
+class ResponseMessage;
 
 class Message {
  public:
@@ -59,7 +63,7 @@ class Message {
 
 class RequestMessage : public Message {
  public:
-  virtual Message* createResponse(Error error, uint8_t* data = nullptr, size_t len = 0) const = 0;
+  virtual ResponseMessage* createResponse(Error error, uint8_t* data = nullptr, size_t len = 0) const = 0;
 
  protected:
   RequestMessage(uint16_t transactionId,
@@ -73,10 +77,17 @@ class Request03 : public RequestMessage {
             uint8_t slaveId,
             uint16_t address,
             uint16_t noRegisters);
-  virtual Message* createResponse(Error error, uint8_t* data = nullptr, size_t len = 0) const;
+  virtual ResponseMessage* createResponse(Error error, uint8_t* data = nullptr, size_t len = 0) const;
 };
 
-class Response03 : public Message {
+class ResponseMessage : public Message {
+ protected:
+  ResponseMessage(uint16_t transactionId,
+                 size_t length,
+                uint8_t slaveId);
+};
+
+class Response03 : public ResponseMessage {
  public:
   Response03(uint16_t transaction,
              uint8_t slaveId,
@@ -85,7 +96,7 @@ class Response03 : public Message {
              uint8_t len);
 };
 
-class ResponseError : public Message {
+class ResponseError : public ResponseMessage {
  public:
   ResponseError(uint16_t transaction,
                 uint8_t slaveId,

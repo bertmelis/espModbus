@@ -28,46 +28,54 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace espModbus {
 
 Connection::Connection(ModbusTCPSlave* slave, AsyncClient* client) :
-  _server(slave),
+  _slave(slave),
   _client(client),
   _factory(),
-  _keepaliveCount(0),
-  _sndQueue(MAX_MODBUS_REQUESTS * 2) {
+  _currentRequest(nullptr),
+  _keepaliveCount(0) {
     _client->onPoll(_onPoll, this);
     _client->onData(_onData, this);
     _client->onDisconnect(_onDisconnect, this);
   }
 
 Connection::~Connection() {
-  while (_sndQueue.size() > 0) {
-    delete _sndQueue.front();
-    _sndQueue.pop();
-  }
+  delete _client;
 }
 
-bool Connection::send(Message* message) {
-  log_v("msg sent to outbox");
-  if (_sndQueue.size() < MAX_MODBUS_REQUESTS * 2) {
-    _sndQueue.push(std::move(message));
-    return true;
+const Message& Connection::request() const {
+  return *_currentRequest;
+}
+
+bool Connection::respond(Error error, uint8_t* data, size_t len) const {
+  log_v("responding...");
+  bool result = false;
+  ResponseMessage* response = _currentRequest->createResponse(error, data, len);
+  log_v("sending message, len: %d, %d", response->data(), response->length());
+  if (_client->space() > response->length()) {
+    _client->write(reinterpret_cast<const char*>(response->data()), response->length());
+    log_v("sent!");
+    result = true;
   } else {
-    log_e("outbox full");
-    return false;
+    log_e("unable to send");
   }
+  delete response;
+  return result;
 }
 
 void Connection::_onData(void* conn, AsyncClient* client, void* data, size_t len) {
   log_v("data rx - len: %d", len);
   Connection* c = static_cast<Connection*>(conn);
   c->_keepaliveCount = 0;
-  RequestMessage* message = nullptr;
-  while (len) {
-    len -= c->_factory.parse(static_cast<uint8_t*>(data), len, message);
-    if (message) {
-      Request* request = new Request(c, std::move(message));
-      c->_server->_onRequest(request);
-      delete request;
-      message = nullptr;
+  size_t parsed = 0;
+  while (len > 0) {
+    parsed = c->_factory.parse(static_cast<uint8_t*>(data), len, c->_currentRequest);
+    len = len - parsed;
+    log_v("parsed: %d", parsed);
+    if (c->_currentRequest != nullptr) {
+      log_v("Message returned");
+      c->_slave->_onRequest(*c);
+      delete c->_currentRequest;
+      c->_currentRequest = nullptr;
     }
   }
 }
@@ -77,26 +85,15 @@ void Connection::_onPoll(void* conn, AsyncClient* client) {
   // polling is about every 500ms so timeout in 60 min = after 120 counts
   ++(c->_keepaliveCount);
   if (c->_keepaliveCount > 120) {
+    log_v("client %d inactive, closing", client);
     c->_client->close(false);
-  }
-
-  // check outbox
-  if (c->_sndQueue.size() > 0) {
-    if (c->_client->space() >= (c->_sndQueue.front()->length())) {
-      c->_client->write(reinterpret_cast<const char*>(c->_sndQueue.front()->data()),
-                        c->_sndQueue.front()->length());
-      c->_keepaliveCount = 0;
-      delete c->_sndQueue.front();
-      c->_sndQueue.pop();
-    }
   }
 }
 
 void Connection::_onDisconnect(void* conn, AsyncClient* client) {
   log_v("client disconnected");
-  delete client;
   Connection* c = static_cast<Connection*>(conn);
-  c->_server->_onClientDisconnect(c->_server, c);
+  c->_slave->_onClientDisconnect(c->_slave, c);
 }
 
 }  // end namespace espModbus

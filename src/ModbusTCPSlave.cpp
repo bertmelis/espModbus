@@ -28,8 +28,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ModbusTCPSlave::ModbusTCPSlave(uint8_t slaveId, uint16_t port) :
   _server(port),
   _slaveId(slaveId),
+  _semaphore(nullptr),
   _onRequestCb(nullptr),
   _arg(nullptr) {
+    _semaphore = xSemaphoreCreateBinary();
+    xSemaphoreGive(_semaphore);
 }
 
 ModbusTCPSlave::~ModbusTCPSlave() {
@@ -55,28 +58,27 @@ uint8_t ModbusTCPSlave::getId() const {
   return _slaveId;
 }
 
-SemaphoreHandle_t ModbusTCPSlave::_semaphore = xSemaphoreCreateBinary();
 uint8_t ModbusTCPSlave::_numberClients = 0;
 
 void ModbusTCPSlave::_onClientConnect(void* slave, AsyncClient* client) {
   ModbusTCPSlave* s = static_cast<ModbusTCPSlave*>(slave);
-  if (xSemaphoreTake(_semaphore, 500) == pdTRUE) {
+  if (xSemaphoreTake(s->_semaphore, 500) == pdTRUE) {
     if (_numberClients < MAX_MODBUS_CLIENTS) {
       _numberClients++;
       espModbus::Connection* conn = new espModbus::Connection(s, client);
-      if (conn == nullptr) {
-        client->close(true);
-        delete client;
+      if (conn != nullptr) {
+        xSemaphoreGive(s->_semaphore);
+        return;
       }
-      xSemaphoreGive(_semaphore);
-      return;
     }
+    xSemaphoreGive(s->_semaphore);
+    client->close(true);
+    delete client;
   } else {
     log_e("couldn't obtain semaphore");
+    client->close(true);
+    delete client;
   }
-  // semaphore not obtained or max clients reached
-  client->close(true);
-  delete client;
 }
 
 void ModbusTCPSlave::_onClientDisconnect(ModbusTCPSlave* c, espModbus::Connection* conn) {
@@ -87,6 +89,7 @@ void ModbusTCPSlave::_onClientDisconnect(ModbusTCPSlave* c, espModbus::Connectio
   }
 }
 
-void ModbusTCPSlave::_onRequest(espModbus::Request* request) {
-  _onRequestCb(_arg, request);
+void ModbusTCPSlave::_onRequest(const espModbus::Connection& connection) {
+  log_v("Callback called");
+  _onRequestCb(_arg, connection);
 }

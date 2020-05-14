@@ -94,8 +94,13 @@ Message::Message(uint16_t transactionId,
     _buffer[4] = high(length);
     _buffer[5] = low(length);
     _buffer[6] = slaveId;
+    log_v("Modbus Message created");
   }
 
+RequestMessage::RequestMessage(uint16_t transactionId,
+                               size_t length,
+                               uint8_t slaveId) :
+  Message(transactionId, length, slaveId) {}
 
 Request03::Request03(uint16_t transaction,
                      uint8_t slaveId,
@@ -109,26 +114,26 @@ Request03::Request03(uint16_t transaction,
     _buffer[11] = low(noRegisters);
 }
 
-Message* Request03::createResponse(Error error, uint8_t* data, size_t len) const {
-  Message* response = nullptr;
-  if (error != SUCCES) {
+ResponseMessage* Request03::createResponse(Error error, uint8_t* data, size_t len) const {
+  ResponseMessage* response = nullptr;
+  if (error == SUCCES) {
+    response = new Response03(transactionId(),
+                              slaveId(),
+                              len / 2,
+                              data,
+                              len);
+  } else {
     response = new ResponseError(transactionId(),
                                  slaveId(),
                                  functionalCode(),
                                  error);
-  } else {
-    response = new Response03(transactionId(),
-                              slaveId(),
-                              functionalCode(),
-                              data,
-                              len);
   }
   return response;
 }
 
-RequestMessage::RequestMessage(uint16_t transactionId,
-                               size_t length,
-                               uint8_t slaveId) :
+ResponseMessage::ResponseMessage(uint16_t transactionId,
+                                 size_t length,
+                                 uint8_t slaveId) :
   Message(transactionId, length, slaveId) {}
 
 Response03::Response03(uint16_t transaction,
@@ -136,7 +141,7 @@ Response03::Response03(uint16_t transaction,
                        uint16_t noRegisters,
                        uint8_t* data,
                        uint8_t len) :
-  Message(transaction, (noRegisters * 2) + 2, slaveId) {
+  ResponseMessage(transaction, (noRegisters * 2) + 2, slaveId) {
     _buffer[7] = READ_HOLD_REGISTER;
     size_t noBytes = noRegisters * 2;
     _buffer[8] = noBytes;
@@ -149,7 +154,7 @@ ResponseError::ResponseError(uint16_t transaction,
                              uint8_t slaveId,
                              FunctionalCode fc,
                              Error error) :
-  Message(transaction, 2, slaveId) {
+  ResponseMessage(transaction, 2, slaveId) {
     _buffer[6] |= 0x80;
     _buffer[7] = error;
   }

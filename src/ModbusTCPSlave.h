@@ -56,38 +56,29 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace espModbus {
 class Request;
 class Connection;
-typedef std::function<void(void*, Request*)> OnRequestCb;
+typedef std::function<void(void*, const espModbus::Connection&)> OnRequestCb;
 }
 class ModbusTCPSlave;
 
 namespace espModbus {
 
-class Request {
- public:
-  Request(Connection* c, RequestMessage* m);
-  const RequestMessage* message;
-  void respond(Error error, uint8_t* data = nullptr, size_t len = 0);
-
- private:
-  Connection* _conn;
-};
-
 class Connection {
  public:
   Connection(ModbusTCPSlave* slave, AsyncClient* client);
   ~Connection();
-  bool send(Message* message);
+  const Message& request() const;
+  bool respond(Error error, uint8_t* data = nullptr, size_t len = 0) const;
 
  private:
   static void _onData(void* conn, AsyncClient* client, void* data, size_t len);
   static void _onPoll(void* conn, AsyncClient* client);
   static void _onDisconnect(void* conn, AsyncClient* client);
 
-  ModbusTCPSlave* _server;
+  ModbusTCPSlave* _slave;
   AsyncClient* _client;
-  MessageParser<RequestMessage> _factory;
+  MessageParser<RequestMessage*> _factory;
+  RequestMessage* _currentRequest;
   uint8_t _keepaliveCount;
-  SimpleQueue<Message*> _sndQueue;
 };
 
 }  // end namespace espModbus
@@ -106,11 +97,11 @@ class ModbusTCPSlave {
  private:
   static void _onClientConnect(void* arg, AsyncClient* client);
   static void _onClientDisconnect(ModbusTCPSlave* c, espModbus::Connection* conn);
-  void _onRequest(espModbus::Request* request);
+  void _onRequest(const espModbus::Connection& connection);
 
   AsyncServer _server;
   uint8_t _slaveId;
-  static SemaphoreHandle_t _semaphore;
+  SemaphoreHandle_t _semaphore;
   static uint8_t _numberClients;
   espModbus::OnRequestCb _onRequestCb;
   void* _arg;

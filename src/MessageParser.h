@@ -39,13 +39,13 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace espModbus {
 
-template <class T>  // must support .create(...);
+template <class T>
 class MessageParser {
  public:
   MessageParser() :
     _buffer(PARSER_BUFFER_LENGTH) {}
 
-  size_t parse(uint8_t* data, size_t len, T* message) {
+  size_t parse(uint8_t* data, size_t len, T& message) {
     // shortest message is 12 bytes, so try to copy in chuncks of 12 bytes
     size_t length = std::min(PARSER_BUFFER_LENGTH - _buffer.size(), len);
     log_v("%d copied", length);
