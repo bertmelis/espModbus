@@ -32,6 +32,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <esp32-hal-log.h>
 
 #include "TypeDefs.h"
+#include "Helpers.h"
 
 namespace espModbus {
 
@@ -71,6 +72,24 @@ class RequestMessage : public Message {
                 uint8_t slaveId);
 };
 
+class Request01 : public RequestMessage {
+ public:
+  Request01(uint16_t transaction,
+            uint8_t slaveId,
+            uint16_t address,
+            uint16_t noCoils);
+  virtual ResponseMessage* createResponse(Error error, uint8_t* data = nullptr, size_t len = 0) const;
+};
+
+class Request02 : public RequestMessage {
+ public:
+  Request02(uint16_t transaction,
+            uint8_t slaveId,
+            uint16_t address,
+            uint16_t noInputs);
+  virtual ResponseMessage* createResponse(Error error, uint8_t* data = nullptr, size_t len = 0) const;
+};
+
 class Request03 : public RequestMessage {
  public:
   Request03(uint16_t transaction,
@@ -87,11 +106,29 @@ class ResponseMessage : public Message {
                 uint8_t slaveId);
 };
 
+class Response01 : public ResponseMessage {
+ public:
+  Response01(uint16_t transaction,
+             uint8_t slaveId,
+             uint8_t noCoils,
+             uint8_t* data,
+             uint8_t len);
+};
+
+class Response02 : public ResponseMessage {
+ public:
+  Response02(uint16_t transaction,
+             uint8_t slaveId,
+             uint8_t noInputs,
+             uint8_t* data,
+             uint8_t len);
+};
+
 class Response03 : public ResponseMessage {
  public:
   Response03(uint16_t transaction,
              uint8_t slaveId,
-             uint16_t noRegisters,
+             uint8_t noRegisters,
              uint8_t* data,
              uint8_t len);
 };

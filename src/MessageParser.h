@@ -60,16 +60,33 @@ class MessageParser {
         _buffer.pop();
         continue;
       }
-      if (_buffer[7] == READ_HOLD_REGISTER &&
+      if (
           _buffer[5] == 6 &&
           _buffer[11] < 123) {
+        switch (_buffer[7]) {
+          case READ_COILS:
+            message = new Request01((_buffer[0] << 8 | _buffer[1]),
+                                     _buffer[6],
+                                    (_buffer[8] << 8 | _buffer[9]),
+                                    _buffer[11]);
+            _buffer.pop(12);
+            break;
+          case READ_DISCR_INPUTS:
+            message = new Request02((_buffer[0] << 8 | _buffer[1]),
+                                     _buffer[6],
+                                    (_buffer[8] << 8 | _buffer[9]),
+                                    _buffer[11]);
+            _buffer.pop(12);
+            break;
+          case READ_HOLD_REGISTERS:
+            message = new Request03((_buffer[0] << 8 | _buffer[1]),
+                                     _buffer[6],
+                                    (_buffer[8] << 8 | _buffer[9]),
+                                    _buffer[11]);
+            _buffer.pop(12);
+            break;
+        }
         log_v("modbus message valid");
-        message = new Request03((_buffer[0] << 8 | _buffer[1]),
-                                _buffer[6],
-                                (_buffer[8] << 8 | _buffer[9]),
-                                _buffer[11]);
-        _buffer.pop(12);
-        break;
       } else {
         _buffer.pop();
         continue;

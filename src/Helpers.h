@@ -26,37 +26,27 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 
 #include <stdint.h>  // for uint*_t
-#include <functional>  // for std::function
 
 namespace espModbus {
 
-enum FunctionalCode : uint8_t {
-  READ_COILS           = 0x01,
-  READ_DISCR_INPUTS    = 0x02,
-  READ_HOLD_REGISTERS  = 0x03,
-  READ_INPUT_REGISTERS = 0x04,
-  WRITE_COIL           = 0x05,
-  WRITE_HOLD_REGISTER  = 0x06,
-  WRITE_MULT_COILS     = 0x0F,
-  WRITE_MULT_REGISTERS = 0x10,
-  UNDEF                = 0xFF
-};
+inline uint8_t low(uint16_t in) {
+  return (in & 0xff);
+}
 
-enum Error : uint8_t {
-  SUCCES                = 0x00,
-  ILLEGAL_FUNCTION      = 0x01,
-  ILLEGAL_DATA_ADDRESS  = 0x02,
-  ILLEGAL_DATA_VALUE    = 0x03,
-  SERVER_DEVICE_FAILURE = 0x04,
-  ACKNOWLEDGE           = 0x05,
-  SERVER_DEVICE_BUSY    = 0x06,
-  NEGATIVE_ACKNOWLEDGE  = 0x07,
-  MEMORY_PARITY_ERROR   = 0x08,
-  TIMEOUT               = 0xE0,
-  INVALID_SLAVE         = 0xE1,
-  INVALID_FUNCTION      = 0xE2,
-  CRC_ERROR             = 0xE3,  // only for Modbus-RTU
-  COMM_ERROR            = 0xE4   // general communication error
-};
+inline uint8_t high(uint16_t in) {
+  return ((in >> 8) & 0xff);
+}
 
-}  // namespace espModbus
+inline uint8_t coilsToBytes(uint8_t noCoils) {
+  return (noCoils + 8 - 1) / 8;
+}
+
+inline uint8_t inputsToBytes(uint8_t noInputs) {
+  return coilsToBytes(noInputs);
+}
+
+inline uint8_t registersToBytes(uint8_t noRegisters) {
+  return noRegisters * 2;
+}
+
+}  // end namespace espModbus

@@ -51,6 +51,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <AsyncTCP.h>
 
 // internal
+#include "Helpers.h"
 #include "MessageParser.h"
 #include "Message.h"
 

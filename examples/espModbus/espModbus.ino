@@ -9,14 +9,36 @@
 ModbusTCPSlave modbus(1, 502);
 
 void onRequest(void* arg, const espModbus::Connection& connection) {
+  Serial.print("New request: ");
+  for (size_t i = 0; i < connection.request().length(); ++i) {
+    Serial.printf("%02x ", connection.request().data()[i]);
+  }
+  Serial.print("\n");
   switch (connection.request().functionalCode()) {
-    case espModbus::READ_HOLD_REGISTER:
+    case espModbus::READ_COILS:
       {
-      Serial.printf("New request %d: addr: %d - len %d", connection.request().functionalCode(), connection.request().address(), connection.request().noRegisters());
-      size_t length = connection.request().noRegisters() * 2;  // registers to bytes
-      uint8_t* data = new uint8_t[length];
-      memset(data, 0x99, length);
-      connection.respond(espModbus::SUCCES, data, length);
+      size_t noBytes = espModbus::coilsToBytes(connection.request().noRegisters());
+      uint8_t* data = new uint8_t[noBytes];
+      memset(data, 0x10, noBytes);  // <-- fill in actual data
+      connection.respond(espModbus::SUCCES, data, noBytes);
+      delete[] data;
+      return;
+      }
+    case espModbus::READ_DISCR_INPUTS:
+      {
+      size_t noBytes = espModbus::inputsToBytes(connection.request().noRegisters());
+      uint8_t* data = new uint8_t[noBytes];
+      memset(data, 0x20, noBytes);  // <-- fill in actual data
+      connection.respond(espModbus::SUCCES, data, noBytes);
+      delete[] data;
+      return;
+      }
+    case espModbus::READ_HOLD_REGISTERS:
+      {
+      size_t noBytes = espModbus::registersToBytes(connection.request().noRegisters());
+      uint8_t* data = new uint8_t[noBytes];
+      memset(data, 0x30, noBytes);  // <-- fill in actual data
+      connection.respond(espModbus::SUCCES, data, noBytes);
       delete[] data;
       return;
       }

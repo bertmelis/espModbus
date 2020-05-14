@@ -62,6 +62,7 @@ uint8_t ModbusTCPSlave::getId() const {
 }
 
 void ModbusTCPSlave::_onClientConnect(void* slave, AsyncClient* client) {
+  log_v("new client");
   ModbusTCPSlave* s = static_cast<ModbusTCPSlave*>(slave);
   if (xSemaphoreTake(s->_semaphore, 500) == pdTRUE) {
     if (_numberClients < MAX_MODBUS_CLIENTS) {

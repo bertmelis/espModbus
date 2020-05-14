@@ -27,14 +27,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace espModbus {
 
-uint8_t low(uint16_t in) {
-  return (in & 0xff);
-}
-
-uint8_t high(uint16_t in) {
-  return ((in >> 8) & 0xff);
-}
-
 Message::Message(const Message& m) :
   _buffer(new uint8_t[m._length]),
   _length(m._length) {
@@ -91,6 +83,7 @@ Message::Message(uint16_t transactionId,
     _buffer[1] = low(transactionId);
     _buffer[2] = 0;
     _buffer[3] = 0;
+    ++length;  // take byte for slaveId into account
     _buffer[4] = high(length);
     _buffer[5] = low(length);
     _buffer[6] = slaveId;
@@ -101,12 +94,70 @@ RequestMessage::RequestMessage(uint16_t transactionId,
                                uint8_t slaveId) :
   Message(transactionId, length, slaveId) {}
 
+Request01::Request01(uint16_t transaction,
+                     uint8_t slaveId,
+                     uint16_t address,
+                     uint16_t noCoils) :
+  RequestMessage(transaction, 5, slaveId) {
+    _buffer[7] = READ_COILS;
+    _buffer[8] = high(address);
+    _buffer[9] = low(address);
+    _buffer[10] = high(noCoils);
+    _buffer[11] = low(noCoils);
+}
+
+ResponseMessage* Request01::createResponse(Error error, uint8_t* data, size_t len) const {
+  ResponseMessage* response = nullptr;
+  if (error == SUCCES) {
+    response = new Response01(transactionId(),
+                              slaveId(),
+                              noRegisters(),
+                              data,
+                              len);
+  } else {
+    response = new ResponseError(transactionId(),
+                                 slaveId(),
+                                 functionalCode(),
+                                 error);
+  }
+  return response;
+}
+
+Request02::Request02(uint16_t transaction,
+                     uint8_t slaveId,
+                     uint16_t address,
+                     uint16_t noInputs) :
+  RequestMessage(transaction, 5, slaveId) {
+    _buffer[7] = READ_DISCR_INPUTS;
+    _buffer[8] = high(address);
+    _buffer[9] = low(address);
+    _buffer[10] = high(noInputs);
+    _buffer[11] = low(noInputs);
+}
+
+ResponseMessage* Request02::createResponse(Error error, uint8_t* data, size_t len) const {
+  ResponseMessage* response = nullptr;
+  if (error == SUCCES) {
+    response = new Response02(transactionId(),
+                              slaveId(),
+                              noRegisters(),
+                              data,
+                              len);
+  } else {
+    response = new ResponseError(transactionId(),
+                                 slaveId(),
+                                 functionalCode(),
+                                 error);
+  }
+  return response;
+}
+
 Request03::Request03(uint16_t transaction,
                      uint8_t slaveId,
                      uint16_t address,
                      uint16_t noRegisters) :
   RequestMessage(transaction, 5, slaveId) {
-    _buffer[7] = READ_HOLD_REGISTER;
+    _buffer[7] = READ_HOLD_REGISTERS;
     _buffer[8] = high(address);
     _buffer[9] = low(address);
     _buffer[10] = high(noRegisters);
@@ -118,7 +169,7 @@ ResponseMessage* Request03::createResponse(Error error, uint8_t* data, size_t le
   if (error == SUCCES) {
     response = new Response03(transactionId(),
                               slaveId(),
-                              len / 2,
+                              noRegisters(),
                               data,
                               len);
   } else {
@@ -135,13 +186,41 @@ ResponseMessage::ResponseMessage(uint16_t transactionId,
                                  uint8_t slaveId) :
   Message(transactionId, length, slaveId) {}
 
+Response01::Response01(uint16_t transaction,
+                       uint8_t slaveId,
+                       uint8_t noCoils,
+                       uint8_t* data,
+                       uint8_t len) :
+  ResponseMessage(transaction, ((noCoils + 8 - 1) / 8) + 2, slaveId) {
+    _buffer[7] = READ_COILS;
+    size_t noBytes = (noCoils + 8 - 1) / 8;
+    _buffer[8] = noBytes;
+    for (size_t i = 0; i < len; ++i) {
+      _buffer[9 + i] = data[i];
+    }
+  }
+
+Response02::Response02(uint16_t transaction,
+                       uint8_t slaveId,
+                       uint8_t noInputs,
+                       uint8_t* data,
+                       uint8_t len) :
+  ResponseMessage(transaction, ((noInputs + 8 - 1) / 8) + 2, slaveId) {
+    _buffer[7] = READ_DISCR_INPUTS;
+    size_t noBytes = (noInputs + 8 - 1) / 8;
+    _buffer[8] = noBytes;
+    for (size_t i = 0; i < len; ++i) {
+      _buffer[9 + i] = data[i];
+    }
+  }
+
 Response03::Response03(uint16_t transaction,
                        uint8_t slaveId,
-                       uint16_t noRegisters,
+                       uint8_t noRegisters,
                        uint8_t* data,
                        uint8_t len) :
   ResponseMessage(transaction, (noRegisters * 2) + 2, slaveId) {
-    _buffer[7] = READ_HOLD_REGISTER;
+    _buffer[7] = READ_HOLD_REGISTERS;
     size_t noBytes = noRegisters * 2;
     _buffer[8] = noBytes;
     for (size_t i = 0; i < len; ++i) {
