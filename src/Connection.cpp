@@ -47,10 +47,9 @@ const Message& Connection::request() const {
 }
 
 bool Connection::respond(Error error, uint8_t* data, size_t len) const {
-  log_v("responding...");
   bool result = false;
   ResponseMessage* response = _currentRequest->createResponse(error, data, len);
-  log_v("sending message, len: %d, %d", response->data(), response->length());
+  log_v("sending message, len %d", response->length());
   if (_client->space() > response->length()) {
     _client->write(reinterpret_cast<const char*>(response->data()), response->length());
     log_v("sent!");
@@ -72,7 +71,6 @@ void Connection::_onData(void* conn, AsyncClient* client, void* data, size_t len
     len = len - parsed;
     log_v("parsed: %d", parsed);
     if (c->_currentRequest != nullptr) {
-      log_v("Message returned");
       c->_slave->_onRequest(*c);
       delete c->_currentRequest;
       c->_currentRequest = nullptr;

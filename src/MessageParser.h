@@ -48,7 +48,6 @@ class MessageParser {
   size_t parse(uint8_t* data, size_t len, T& message) {
     // shortest message is 12 bytes, so try to copy in chuncks of 12 bytes
     size_t length = std::min(PARSER_BUFFER_LENGTH - _buffer.size(), len);
-    log_v("%d copied", length);
     for (size_t i = 0; i < length; ++i) {
       _buffer.push(data[i]);
     }
