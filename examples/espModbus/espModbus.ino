@@ -12,7 +12,7 @@ void onRequest(void* arg, const espModbus::Connection& connection) {
   switch (connection.request().functionalCode()) {
     case espModbus::READ_HOLD_REGISTER:
       {
-      Serial("New request %d: addr: %d - len %d", connection.request().functionalCode(), connection.request().address(), connection.request().noRegisters());
+      Serial.printf("New request %d: addr: %d - len %d", connection.request().functionalCode(), connection.request().address(), connection.request().noRegisters());
       size_t length = connection.request().noRegisters() * 2;  // registers to bytes
       uint8_t* data = new uint8_t[length];
       memset(data, 0x99, length);
