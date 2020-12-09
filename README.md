@@ -1,2 +1,12 @@
+# ARCHIVED
+
+This repo is archived no longer actively maintained.
+
+For a complete Modbus library for ESP32, I invite you to https://github.com/ESP32ModbusUnified/eModbus
+
 # espModbus
-Async modbus server for esp
+
+Async Modbus server for ESP32.
+
+This is WIP!
+
